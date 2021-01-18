@@ -1,0 +1,31 @@
+Connect-AzureAD | Out-null
+$guest=get-AzureAduser -Filter "UserType eq 'member' and AccountEnabled eq true"
+$ObjectIDs = $guest.objectId
+$queryStartDateTime = (Get-Date).AddDays(-7)
+$queryStartDateTimeFilter = '{0:yyyy-MM-dd}T{0:HH:mm:sszzz}' -f $queryStartDateTime
+
+$details=@()
+
+foreach ($object in $objectIDs) 
+
+{
+   
+    $login = Get-AzureADAuditSignInLogs -Filter "userID eq '$Object' and createdDateTime ge $queryStartDateTimeFilter"
+
+  
+      foreach ($c in $Login)
+      {
+      #write-host "user" $c.UserdisplayName "is signed into" $c.Appdisplayname "at" $c.CreatedDateTime 
+      $details+= New-Object psobject -Property @{
+        Username=$c.UserDisplayName
+        App=$c.AppDisplayName
+        LoginTime=$c.CreatedDateTime
+      }
+      
+     }
+
+ }
+
+ Write-host "List of users with sigin details below, same is exported with file name output.csv to user profile doucments folder"
+ $details
+ $details | Export-Csv -path $env:userprofile\Documents\Output.csv -NoTypeInformation
